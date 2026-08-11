@@ -1,0 +1,564 @@
+@import "tailwindcss";
+
+@import url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_20-04@2.1/MaplestoryOTFBold.woff');
+
+@font-face {
+  font-family: 'MaplestoryOTFBold';
+  src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_20-04@2.1/MaplestoryOTFBold.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+}
+
+* {
+  box-sizing: border-box;
+  font-family: 'MaplestoryOTFBold', -apple-system, sans-serif;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+}
+
+body {
+  background-color: #EFEBE4;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  color: #2D4A22;
+}
+
+/* 모바일 프레임 / 모바일 컨테이너 정돈 */
+.app-screen {
+  width: 375px;
+  /* 높이를 고정하지 않고 내용에 맞게 반응하도록 처리 */
+  height: auto;
+  min-height: 580px;
+  background: #FAFCF7;
+  border: 8px solid #386627;
+  border-radius: 40px;
+  padding: 32px 24px;
+  
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  
+  /* 핵심: space-between을 끄고 전체 요소 간격을 24px로 통일 */
+  gap: 24px; 
+  box-shadow: 0 20px 40px rgba(45, 74, 34, 0.15);
+  position: relative;
+  overflow: hidden;
+}
+
+/* 상단 헤더 및 메시지 배치 */
+.header-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.badge {
+  background: #EBF5E6;
+  color: #386627;
+  font-size: 12px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1.5px solid #A8D08D;
+}
+
+.app-title {
+  font-size: 20px;
+  color: #2D4A22;
+  white-space: nowrap;
+}
+
+/* 상단 유아 안내 메시지 (입체감 있는 젤리 박스 스타일) */
+.guide-msg {
+  background: #EBF5E6;
+  color: #2D4A22;
+  font-size: 13px;
+  font-weight: bold;
+  padding: 8px 16px;
+  border-radius: 16px;
+  border: 2px solid #A8D08D;
+  box-shadow: 0 4px 0 #A8D08D;
+  line-height: 1.35;
+  text-align: center;
+  margin-top: 4px;
+}
+
+/* 중앙 콘텐츠 영역 (고정 높이로 Y축 위치 유지) */
+.content-area {
+  width: 100%;
+  height: 290px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: auto;
+}
+
+/* 하단 클릭 전용 젤리 버튼 */
+.jelly-btn {
+  width: 100%;
+  background: #5B9E36;
+  color: #FFFFFF;
+  font-size: 16px;
+  padding: 14px 0;
+  border-radius: 20px;
+  border: none;
+  box-shadow: 0 6px 0 #386627; /* 젤리/푸딩 볼록 입체감 */
+  cursor: pointer;
+  text-align: center;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+  transition: all 0.1s ease;
+}
+
+.jelly-btn:active {
+  transform: translateY(3px);
+  box-shadow: 0 3px 0 #386627;
+}
+
+.sub-jelly-btn {
+  background: #88D453;
+  box-shadow: 0 6px 0 #5B9E36;
+}
+
+.sub-jelly-btn:active {
+  box-shadow: 0 3px 0 #5B9E36;
+}
+
+.btn-group {
+  width: 100%;
+  display: flex;
+  gap: 10px;
+  margin-top: auto;
+}
+
+/* Compatibility aliases for pudding-button and button-group */
+.pudding-button {
+  width: 100%;
+  background: #5B9E36;
+  color: #FFFFFF;
+  font-size: 16px;
+  padding: 14px 0;
+  border-radius: 20px;
+  border: none;
+  box-shadow: 0 6px 0 #386627;
+  cursor: pointer;
+  text-align: center;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+  transition: all 0.1s ease;
+}
+
+.pudding-button:active {
+  transform: translateY(3px);
+  box-shadow: 0 3px 0 #386627;
+}
+
+.button-group {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: auto;
+}
+
+/* 3D 클레이 지구 캐릭터 및 둥둥 떠있는 꽃잎 연출 */
+.clay-earth-container {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.clay-earth {
+  width: 170px;
+  height: 170px;
+  background: radial-gradient(circle at 35% 30%, #76C7F0, #3B92D1 60%, #205E91);
+  border-radius: 50%;
+  position: relative;
+  box-shadow: 
+    inset -12px -12px 25px rgba(0,0,0,0.22), 
+    inset 10px 10px 20px rgba(255,255,255,0.7), 
+    0 15px 25px rgba(45, 74, 34, 0.12);
+  border: 3px solid #205E91;
+}
+
+/* 부드러운 3D 대륙 질감 */
+.clay-land-1 {
+  position: absolute;
+  top: 28px;
+  left: 24px;
+  width: 58px;
+  height: 52px;
+  background: #88D453;
+  border-radius: 40% 60% 70% 30% / 50% 60% 40% 50%;
+  box-shadow: inset -4px -4px 8px rgba(0,0,0,0.15), inset 3px 3px 6px rgba(255,255,255,0.4);
+}
+
+.clay-land-2 {
+  position: absolute;
+  bottom: 28px;
+  right: 22px;
+  width: 62px;
+  height: 55px;
+  background: #88D453;
+  border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+  box-shadow: inset -4px -4px 8px rgba(0,0,0,0.15), inset 3px 3px 6px rgba(255,255,255,0.4);
+}
+
+/* 지구 이목구비 */
+.clay-eye {
+  position: absolute;
+  top: 70px;
+  width: 11px;
+  height: 14px;
+  background: #1B3314;
+  border-radius: 50%;
+}
+.clay-eye.left { left: 58px; }
+.clay-eye.right { right: 58px; }
+
+.eye-shine {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 4px;
+  height: 4px;
+  background: #FFF;
+  border-radius: 50%;
+}
+
+.clay-blush {
+  position: absolute;
+  top: 82px;
+  width: 16px;
+  height: 9px;
+  background: #FF9EAA;
+  border-radius: 50%;
+  opacity: 0.8;
+}
+.clay-blush.left { left: 46px; }
+.clay-blush.right { right: 46px; }
+
+.clay-smile {
+  position: absolute;
+  top: 78px;
+  left: 73px;
+  width: 24px;
+  height: 13px;
+  border-bottom: 4px solid #1B3314;
+  border-radius: 0 0 14px 14px;
+}
+
+/* 주변에 둥둥 뜨는 3D 꽃잎 2개 */
+.petal {
+  position: absolute;
+  background: #FFB7C5;
+  box-shadow: inset -2px -2px 5px rgba(0,0,0,0.1), 0 5px 10px rgba(0,0,0,0.08);
+  animation: float 3s ease-in-out infinite alternate;
+}
+.petal-1 {
+  top: 5px;
+  right: 12px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50% 0 50% 50%;
+  transform: rotate(-15deg);
+}
+.petal-2 {
+  bottom: 15px;
+  left: 8px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50% 50% 0 50%;
+  transform: rotate(30deg);
+  animation-delay: -1.5s;
+}
+
+@keyframes float {
+  0% { transform: translateY(0px) rotate(-15deg); }
+  100% { transform: translateY(-8px) rotate(-5deg); }
+}
+
+/* 안내 카드 박스 */
+.info-card {
+  background: #FFFFFF;
+  border: 3px solid #A8D08D;
+  border-radius: 20px;
+  padding: 16px 20px;
+  text-align: center;
+  font-size: 15px;
+  color: #2D4A22;
+  line-height: 1.45;
+  box-shadow: 0 6px 0 #A8D08D;
+  width: 100%;
+}
+
+/* 3D 푸딩/젤리 버튼 */
+.pudding-button {
+  width: 100%;
+  background: #5B9E36;
+  color: #FFFFFF;
+  font-size: 18px;
+  padding: 16px 0;
+  border-radius: 24px;
+  border: none;
+  box-shadow: 0 8px 0 #386627;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+  cursor: pointer;
+  transition: all 0.1s ease;
+}
+
+.pudding-button:active {
+  transform: translateY(4px);
+  box-shadow: 0 4px 0 #386627;
+}
+
+/* Compat aliases */
+.sub-title {
+  background: #EBF5E6;
+  color: #386627;
+  font-size: 13px;
+  padding: 6px 16px;
+  border-radius: 20px;
+  border: 1.5px solid #A8D08D;
+  letter-spacing: -0.3px;
+  display: inline-block;
+  margin-bottom: 8px;
+}
+
+.main-title {
+  font-size: 21px;
+  color: #2D4A22;
+  text-align: center;
+  white-space: nowrap;
+  margin-top: -10px;
+}
+
+.btn-3d {
+  width: 100%;
+  background: #5B9E36;
+  color: #FFFFFF;
+  font-size: 18px;
+  padding: 16px 0;
+  border-radius: 24px;
+  border: none;
+  box-shadow: 0 8px 0 #386627;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+  cursor: pointer;
+  transition: all 0.1s ease;
+}
+
+.btn-3d:active {
+  transform: translateY(4px);
+  box-shadow: 0 4px 0 #386627;
+}
+
+.character-avatar {
+  width: 165px;
+  height: 165px;
+  background: radial-gradient(circle at 35% 35%, #ffffff, #d7f0ad);
+  border: 5px solid #A8D08D;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 5rem;
+  box-shadow: inset 0 -8px 0 rgba(142, 202, 60, 0.3), 0 10px 15px rgba(0, 0, 0, 0.08);
+}
+
+/* 중단: 유아 사진 프레임 */
+.photo-container {
+  position: relative;
+  width: 130px;
+  height: 130px;
+  background: #FFFFFF;
+  border: 4px solid #A8D08D;
+  border-radius: 30px;
+  box-shadow: 0 8px 0 #A8D08D, 0 10px 15px rgba(0,0,0,0.05);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+/* 사진 더미(실제 사진 들어갈 곳) */
+.photo-placeholder {
+  width: 100%;
+  height: 100%;
+  background: #F0F7EC;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: #6FA054;
+  font-size: 13px;
+}
+
+.photo-placeholder span {
+  font-size: 36px;
+  margin-bottom: 2px;
+}
+
+/* 하단: 미션 선택 그리드 (2x2) */
+.mission-section {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.section-label {
+  font-size: 14px;
+  color: #386627;
+  text-align: center;
+}
+
+.mission-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  width: 100%;
+}
+
+/* 젤리 미션 버튼 */
+.mission-card {
+  background: #FFFFFF;
+  border: 2.5px solid #A8D08D;
+  border-radius: 20px;
+  padding: 12px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 5px 0 #A8D08D;
+  cursor: pointer;
+  transition: all 0.1s ease;
+}
+
+.mission-card:active {
+  transform: translateY(3px);
+  box-shadow: 0 2px 0 #A8D08D;
+}
+
+.mission-card.selected {
+  background: #EBF5E6;
+  border-color: #386627;
+  box-shadow: 0 5px 0 #386627;
+}
+
+.mission-text {
+  font-size: 12px;
+  color: #2D4A22;
+  text-align: center;
+  line-height: 1.3;
+  word-break: keep-all;
+}
+
+/* --- 직관적인 CSS 일러스트들 --- */
+
+/* 1. 직관적 수도꼭지 아이콘 */
+.icon-faucet {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  background: #E1F5FE;
+  border-radius: 12px;
+}
+.faucet-body {
+  position: absolute;
+  top: 14px;
+  left: 6px;
+  width: 18px;
+  height: 8px;
+  background: #90A4AE;
+  border-radius: 4px 0 0 4px;
+}
+.faucet-spout {
+  position: absolute;
+  top: 18px;
+  left: 20px;
+  width: 8px;
+  height: 10px;
+  background: #90A4AE;
+  border-radius: 0 0 4px 4px;
+}
+.faucet-handle {
+  position: absolute;
+  top: 8px;
+  left: 10px;
+  width: 12px;
+  height: 6px;
+  background: #FF5252; /* 빨간 손잡이 레버 */
+  border-radius: 3px;
+}
+.water-drop {
+  position: absolute;
+  bottom: 4px;
+  left: 21px;
+  width: 6px;
+  height: 6px;
+  background: #29B6F6;
+  border-radius: 0 50% 50% 50%;
+  transform: rotate(45deg);
+}
+
+/* 이모티콘 폰트 크기 조정 */
+.emoji-icon {
+  font-size: 28px;
+  line-height: 1;
+}
+
+/* 하단 완료 버튼 */
+.submit-button {
+  width: 100%;
+  background: #5B9E36;
+  color: #FFFFFF;
+  font-size: 16px;
+  padding: 14px 0;
+  border-radius: 20px;
+  border: none;
+  box-shadow: 0 6px 0 #386627;
+  cursor: pointer;
+  margin-top: auto;
+  transition: all 0.1s ease;
+}
+.submit-button:active {
+  transform: translateY(3px);
+  box-shadow: 0 3px 0 #386627;
+}
+
+@keyframes badgeBounce {
+  0% { transform: scale(0.85); }
+  100% { transform: scale(1.15); }
+}
+
+@keyframes sparklePop {
+  0% { transform: scale(0.6) rotate(0deg); opacity: 0.4; }
+  100% { transform: scale(1.3) rotate(20deg); opacity: 1; }
+}
+
+.animate-badgeBounce {
+  animation: badgeBounce 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) infinite alternate;
+}
+
+.animate-sparklePop {
+  animation: sparklePop 0.6s ease-in-out infinite alternate;
+}
+
+.scan-area {
+  border-radius: 25px;
+  width: 210px;
+  height: 210px;
+}
+
+
+

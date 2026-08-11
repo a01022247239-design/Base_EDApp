@@ -1,0 +1,10 @@
+{
+  "name": "🌸 꽃잎반 출동! 지구를 부탁해 🌍",
+  "description": "꽃잎반 만 3세 유아용 에코 지구 지킴이 출동 및 QR 카드 스캔 앱",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

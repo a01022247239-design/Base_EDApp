@@ -1,1 +1,706 @@
 
+import React, { useState, useEffect } from 'react';
+import { Screen1Home } from './components/Screen1Home';
+import { Screen2QRScan } from './components/Screen2QRScan';
+import { Screen4MissionPledge } from './components/Screen4MissionPledge';
+import { Screen5Badge } from './components/Screen5Badge';
+import AdminModal, { ChildData } from './components/AdminModal';
+import { subscribeToFirebase, syncWithFirebase } from './firebase';
+import { EcoCard, AgentProfile, ScreenId } from './types';
+import { sounds } from './utils/audio';
+import { ShieldCheck, Volume2, VolumeX, RotateCcw } from 'lucide-react';
+
+const sampleCards: EcoCard[] = [
+  {
+    id: '01',
+    agentName: '김지우',
+    agentTitle: '지구 지킴이',
+    avatar: '👦',
+    level: 1,
+    code: 'FLOWER-KIMJIWOO-2026',
+    photo: null,
+  },
+  {
+    id: '02',
+    agentName: '이준',
+    agentTitle: '바다 수호대',
+    avatar: '🧒',
+    level: 2,
+    code: 'FLOWER-LEEJUN-2026',
+    photo: null,
+  },
+  {
+    id: '03',
+    agentName: '박서아',
+    agentTitle: '숲속 파수꾼',
+    avatar: '👧',
+    level: 3,
+    code: 'FLOWER-PARKSEOA-2026',
+    photo: null,
+  },
+  {
+    id: '04',
+    agentName: '최민준',
+    agentTitle: '에너지 파수꾼',
+    avatar: '👦',
+    level: 1,
+    code: 'FLOWER-CHOIMINJUN-2026',
+    photo: null,
+  },
+];
+
+export const DEFAULT_CHILDREN: ChildData[] = [
+  { id: '01', name: '김지우', photo: null, badgeCount: 3 },
+  { id: '02', name: '이준', photo: null, badgeCount: 1 },
+  { id: '03', name: '박서아', photo: null, badgeCount: 5 },
+  { id: '04', name: '최민준', photo: null, badgeCount: 2 },
+];
+
+const STORAGE_KEY_AGENT = 'petal_eco_agent_v4';
+const STORAGE_KEY_CARD = 'petal_eco_card_v4';
+const STORAGE_KEY_SCREEN = 'petal_eco_screen_v4';
+const STORAGE_KEY_BADGES = 'petal_eco_badges_v4';
+const STORAGE_KEY_ACTIVE_CHILD_ID = 'petal_eco_active_child_id';
+
+export default function App() {
+  const [currentScreen, setCurrentScreen] = useState<ScreenId>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_SCREEN);
+      if (saved && ['screen1', 'screen2', 'screen4', 'screen5'].includes(saved)) {
+        return saved as ScreenId;
+      }
+    } catch {
+      // ignore
+    }
+    return 'screen1';
+  });
+
+  const [badgeCount, setBadgeCount] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_BADGES);
+      if (saved) return parseInt(saved, 10);
+    } catch {
+      // ignore
+    }
+    return 0;
+  });
+
+  const [selectedCard, setSelectedCard] = useState<EcoCard | null>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_CARD);
+      if (saved) return JSON.parse(saved);
+    } catch {
+      // ignore
+    }
+    return sampleCards[0];
+  });
+
+  const [agent, setAgent] = useState<AgentProfile>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_AGENT);
+      if (saved) return JSON.parse(saved);
+    } catch {
+      // ignore
+    }
+    return {
+      name: '김지우',
+      className: '꽃잎반',
+      title: '지구 지킴이',
+      level: 1,
+      xp: 50,
+      maxXp: 100,
+      avatar: '👦',
+      photoUrl: null,
+      qrCodeData: 'FLOWER-KIMJIWOO-2026',
+      badge: '🌸 지구 지킴이',
+      missionsCompleted: 12,
+      totalMissions: 20,
+      streakDays: 3,
+    };
+  });
+
+  const [childrenList, setChildrenList] = useState<ChildData[]>([]);
+  const [activeChildId, setActiveChildId] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem(STORAGE_KEY_ACTIVE_CHILD_ID) || null;
+    } catch {
+      return null;
+    }
+  });
+
+  const [activeBadge, setActiveBadge] = useState<{ icon: string; name: string; desc?: string } | null>(null);
+  const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = subscribeToFirebase((data) => {
+      if (data) {
+        const list: ChildData[] = Array.isArray(data) ? data : Object.values(data);
+        setChildrenList(list);
+
+        if (activeChildId) {
+          const foundChild = list.find((c) => c && c.id === activeChildId);
+          if (foundChild) {
+            setAgent((prev) => ({
+              ...prev,
+              name: foundChild.name ?? prev.name,
+              photoUrl: foundChild.photo !== undefined ? foundChild.photo : prev.photoUrl,
+            }));
+            if (foundChild.badgeCount !== undefined) {
+              setBadgeCount(foundChild.badgeCount);
+            }
+          }
+        }
+      }
+    }, DEFAULT_CHILDREN);
+
+    return () => {
+      if (typeof unsubscribe === 'function') {
+        unsubscribe();
+      }
+    };
+  }, [activeChildId]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY_SCREEN, currentScreen);
+    } catch {
+      // ignore
+    }
+  }, [currentScreen]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY_BADGES, badgeCount.toString());
+    } catch {
+      // ignore
+    }
+  }, [badgeCount]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY_CARD, JSON.stringify(selectedCard));
+    } catch {
+      // ignore
+    }
+  }, [selectedCard]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY_AGENT, JSON.stringify(agent));
+    } catch {
+      // ignore
+    }
+  }, [agent]);
+
+  useEffect(() => {
+    try {
+      if (activeChildId) {
+        localStorage.setItem(STORAGE_KEY_ACTIVE_CHILD_ID, activeChildId);
+      } else {
+        localStorage.removeItem(STORAGE_KEY_ACTIVE_CHILD_ID);
+      }
+    } catch {
+      // ignore
+    }
+  }, [activeChildId]);
+
+  const handleNavigateToMission = (badge?: { icon: string; name: string; desc?: string }) => {
+    sounds.playClick();
+    setActiveBadge(badge || null);
+    setCurrentScreen('screen4');
+  };
+
+  const handleScanComplete = (
+    card?: EcoCard,
+    childData?: { id: string; name: string; photo?: string | null; badgeCount?: number }
+  ) => {
+    if (childData) {
+      setActiveChildId(childData.id);
+      setAgent((prev) => ({
+        ...prev,
+        name: childData.name,
+        photoUrl: childData.photo !== undefined ? childData.photo : prev.photoUrl,
+      }));
+      if (childData.badgeCount !== undefined) {
+        setBadgeCount(childData.badgeCount);
+      }
+    } else if (card) {
+      setSelectedCard(card);
+      setAgent((prev) => ({
+        ...prev,
+        name: card.agentName,
+        title: card.agentTitle,
+        avatar: card.avatar,
+        level: card.level,
+        badge: `🌸 ${card.agentTitle}`,
+      }));
+    }
+
+    setCurrentScreen('screen5');
+  };
+
+  const handlePledgeComplete = async () => {
+    sounds.playLevelUp();
+    const newCount = Math.min(6, badgeCount + 1);
+    setBadgeCount(newCount);
+
+    if (activeChildId && childrenList.length > 0) {
+      const updatedChildren = childrenList.map((child) => {
+        if (child && child.id === activeChildId) {
+          return {
+            ...child,
+            badgeCount: newCount,
+          };
+        }
+        return child;
+      });
+
+      try {
+        await syncWithFirebase(updatedChildren);
+      } catch (err) {
+        console.error('Firebase 배지 동기화 실패:', err);
+      }
+    }
+
+    setCurrentScreen('screen5');
+  };
+
+  const handleUpdateChildrenData = async (newChildren: ChildData[]) => {
+    setChildrenList(newChildren);
+    try {
+      await syncWithFirebase(newChildren);
+    } catch (err) {
+      console.error('Firebase 원아 목록 동기화 실패:', err);
+    }
+  };
+
+  const handleReset = () => {
+    sounds.playClick();
+    setBadgeCount(0);
+    setActiveChildId(null);
+    setCurrentScreen('screen1');
+    localStorage.clear();
+  };
+
+  const toggleSound = () => {
+    const muted = sounds.toggleMute();
+    setIsMuted(muted);
+  };
+
+  return (
+    <div className="w-full h-screen bg-[#E5EFE2] flex items-center justify-center p-2 md:p-4 font-sans select-none overflow-hidden">
+      {/* Mobile Frame Container */}
+      <div className="w-full max-w-[430px] h-full max-h-[920px] bg-[#FAFCF7] rounded-[36px] shadow-2xl border-[6px] border-[#386627]/20 flex flex-col overflow-hidden relative">
+        
+        {/* Header Bar */}
+        <header className="w-full px-5 py-3 bg-[#EBF5E6] border-b border-[#D5E6CF] flex items-center justify-between shrink-0 z-20">
+          <button
+            onClick={() => {
+              sounds.playClick();
+              setCurrentScreen('screen1');
+            }}
+            className="flex items-center gap-2 cursor-pointer group text-left"
+          >
+            <div className="w-8 h-8 rounded-full bg-[#386627] text-white flex items-center justify-center font-black text-sm shadow">
+              🌱
+            </div>
+            <div>
+              <h1 className="text-sm font-extrabold text-[#2D4A22] leading-tight group-hover:text-[#386627]">
+                꽃잎반 지구 지킴이
+              </h1>
+              <p className="text-[10px] text-[#5B7B4C] font-semibold">ESG 환경 교육 키오스크</p>
+            </div>
+          </button>
+
+          <div className="flex items-center gap-1.5">
+            {/* Audio Toggle Button */}
+            <button
+              onClick={toggleSound}
+              className="p-2 rounded-xl bg-white text-[#386627] border border-[#A8D08D] hover:bg-[#F2F8EE] cursor-pointer transition-colors shadow-xs"
+              title={isMuted ? '음소거 해제' : '음소거'}
+            >
+              {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+            </button>
+
+            {/* Admin Management Modal Trigger */}
+            <button
+              onClick={() => {
+                sounds.playClick();
+                setIsAdminOpen(true);
+              }}
+              className="p-2 rounded-xl bg-[#386627] text-white hover:bg-[#2D4A22] cursor-pointer transition-colors shadow-xs flex items-center justify-center"
+              title="교사용 관리자 설정"
+            >
+              <ShieldCheck className="w-4 h-4" />
+            </button>
+          </div>
+        </header>
+
+        {/* Dynamic Screen View Content */}
+        <main className="flex-1 overflow-hidden relative flex flex-col">
+          {currentScreen === 'screen1' && (
+            <Screen1Home
+              agent={agent}
+              badgeCount={badgeCount}
+              onStartQR={() => {
+                sounds.playClick();
+                setCurrentScreen('screen2');
+              }}
+              onNavigateToMission={handleNavigateToMission}
+            />
+          )}
+
+          {currentScreen === 'screen2' && (
+            <Screen2QRScan
+              onScanComplete={handleScanComplete}
+              sampleCards={sampleCards}
+              childrenList={childrenList}
+            />
+          )}
+
+          {currentScreen === 'screen4' && (
+            <Screen4MissionPledge
+              agent={agent}
+              activeBadge={activeBadge}
+              onPledgeComplete={handlePledgeComplete}
+            />
+          )}
+
+          {currentScreen === 'screen5' && (
+            <Screen5Badge
+              agent={agent}
+              badgeCount={badgeCount}
+              onHomeClick={() => {
+                sounds.playClick();
+                setCurrentScreen('screen1');
+              }}
+              onNavigateToMission={handleNavigateToMission}
+            />
+          )}
+        </main>
+
+        {/* Global Reset Button Footer */}
+        <footer className="w-full py-2 bg-[#F2F8EE] border-t border-[#D5E6CF] text-center shrink-0 flex items-center justify-center z-20">
+          <button
+            onClick={handleReset}
+            className="text-[11px] font-bold text-slate-500 hover:text-rose-600 flex items-center gap-1 cursor-pointer transition-colors px-3 py-1 rounded-lg hover:bg-rose-50"
+          >
+            <RotateCcw className="w-3 h-3" />
+            <span>앱 초기화</span>
+          </button>
+        </footer>
+
+        {/* Teacher/Admin Modal */}
+        <AdminModal
+          isOpen={isAdminOpen}
+          onClose={() => setIsAdminOpen(false)}
+          childrenData={childrenList}
+          onUpdateChildren={handleUpdateChildrenData}
+        />
+      </div>
+    </div>
+  );
+}
+import { initializeApp } from 'firebase/app';
+import { getDatabase, ref, onValue, set } from 'firebase/database';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAtxb5PAmj5fiHxwe6HvyYPNO7Vhw7aGX8",
+  authDomain: "h2uworks-924a0.firebaseapp.com",
+  databaseURL: "https://h2uworks-924a0-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "h2uworks-924a0",
+  storageBucket: "h2uworks-924a0.firebasestorage.app",
+  messagingSenderId: "1015505187433",
+  appId: "1:1015505187433:web:f123762305614f85cee8f8"
+};
+
+const app = initializeApp(firebaseConfig);
+export const db = getDatabase(app);
+
+// 기존 Realtime Database 데이터 경로 유지
+const CHILDREN_DB_PATH = 'earth_keeper/children';
+
+/**
+ * Firebase Realtime Database의 원아 데이터를 구독합니다.
+ * - 단일 원본(Source of Truth)으로 사용되며, DB 데이터를 읽어와 React State만 업데이트합니다.
+ * - 수신 동작 자체는 절대로 Firebase Write를 재호출하지 않습니다 (Echo Loop 방지).
+ * - Firebase DB가 완전히 비어있는 경우(null/미존재)에만 defaultData로 1회 최초 시딩을 수행합니다.
+ * - set() 성공 시 Firebase의 onValue 리스너가 즉시 재호출되므로, .then() 내에서 onDataReceived를 직접 중복 호출하지 않습니다.
+ */
+export const subscribeToFirebase = (
+  onDataReceived: (data: any) => void,
+  defaultDataIfEmpty?: any
+) => {
+  const childrenRef = ref(db, CHILDREN_DB_PATH);
+
+  return onValue(
+    childrenRef,
+    (snapshot) => {
+      if (snapshot.exists()) {
+        const val = snapshot.val();
+        if (val !== null && val !== undefined) {
+          onDataReceived(val);
+          return;
+        }
+      }
+
+      // Firebase 데이터가 비어있는 경우에만 1회 초기 시딩
+      if (defaultDataIfEmpty) {
+        set(childrenRef, defaultDataIfEmpty).catch((err) => {
+          console.error("Firebase 초기 시딩 실패:", err);
+        });
+      }
+    },
+    (error) => {
+      console.error("Firebase 데이터 구독 에러:", error);
+    }
+  );
+};
+
+/**
+ * 명시적인 사용자 액션(배지 수여, 원아 정보 수정, 원아 삭제 등)이 발생했을 때만
+ * Firebase Realtime Database에 변경된 원아 데이터를 저장합니다.
+ */
+export const syncWithFirebase = async (data: any) => {
+  try {
+    const childrenRef = ref(db, CHILDREN_DB_PATH);
+    await set(childrenRef, data);
+  } catch (error) {
+    console.error("Firebase 데이터 저장 실패:", error);
+    throw error;
+  }
+};
+import React, { useEffect, useRef, useState } from 'react';
+import { motion } from 'motion/react';
+import jsQR from 'jsqr';
+import { EcoCard } from '../types';
+import { sounds } from '../utils/audio';
+import { QrCode, AlertCircle, CheckCircle } from 'lucide-react';
+import { ChildData } from './AdminModal';
+
+interface Props {
+  onScanComplete: (card?: EcoCard, childData?: { id: string; name: string; photo?: string | null; badgeCount?: number }) => void;
+  sampleCards: EcoCard[];
+  childrenList: ChildData[];
+}
+
+export const Screen2QRScan: React.FC<Props> = ({ onScanComplete, sampleCards, childrenList }) => {
+  const [useRealCamera, setUseRealCamera] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const [scannedResult, setScannedResult] = useState<string | null>(null);
+
+  const [selectedChildId, setSelectedChildId] = useState<string>(() => childrenList[0]?.id || "01");
+
+  // childrenList 변경 시 선택된 ID가 유효한지 확인하고 동기화
+  useEffect(() => {
+    if (childrenList.length > 0 && !childrenList.some((c) => c.id === selectedChildId)) {
+      setSelectedChildId(childrenList[0].id);
+    }
+  }, [childrenList, selectedChildId]);
+
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const animFrameRef = useRef<number | null>(null);
+  const isScanningRef = useRef<boolean>(false);
+
+  const processScanSuccess = (child: ChildData) => {
+    if (isScanningRef.current) return;
+    isScanningRef.current = true;
+
+    setScannedResult(`[${child.id}] ${child.name}`);
+    sounds.playScanBeep();
+
+    // [음성 안내 명세]: "(유아 이름) 지구 지킴이, 환영해!"
+    const welcomeMsg = `${child.name} 지구 지킴이, 환영해!`;
+    sounds.speakWelcome(welcomeMsg, () => {
+      onScanComplete(sampleCards[0], child);
+    });
+  };
+
+  // Real-time camera scan loop using jsQR
+  const scanCanvas = () => {
+    if (!isScanningRef.current && videoRef.current && videoRef.current.readyState === videoRef.current.HAVE_ENOUGH_DATA) {
+      const canvas = canvasRef.current || document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        canvas.width = videoRef.current.videoWidth;
+        canvas.height = videoRef.current.videoHeight;
+        ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(imageData.data, imageData.width, imageData.height, {
+          inversionAttempts: 'dontInvert',
+        });
+
+        if (code && code.data) {
+          // Parse QR code string (e.g., KIDS_QR_ID_01 or 01)
+          let foundChild = childrenList.find(c => code.data.includes(c.id));
+          if (!foundChild) {
+            foundChild = childrenList[0];
+          }
+          if (foundChild) {
+            processScanSuccess(foundChild);
+          }
+          return;
+        }
+      }
+    }
+    if (!isScanningRef.current) {
+      animFrameRef.current = requestAnimationFrame(scanCanvas);
+    }
+  };
+
+  useEffect(() => {
+    if (useRealCamera) {
+      navigator.mediaDevices?.getUserMedia?.({ video: { facingMode: 'environment' } })
+        .then((stream) => {
+          streamRef.current = stream;
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+          }
+          setCameraError(null);
+          animFrameRef.current = requestAnimationFrame(scanCanvas);
+        })
+        .catch((err) => {
+          console.warn('Camera stream error:', err);
+          setCameraError('카메라를 연결할 수 없어 시뮬레이션 모드로 작동합니다.');
+          setUseRealCamera(false);
+        });
+    } else {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((t) => t.stop());
+        streamRef.current = null;
+      }
+      if (animFrameRef.current) {
+        cancelAnimationFrame(animFrameRef.current);
+      }
+    }
+
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((t) => t.stop());
+      }
+      if (animFrameRef.current) {
+        cancelAnimationFrame(animFrameRef.current);
+      }
+    };
+  }, [useRealCamera, childrenList]);
+
+  const handleSimulatedScan = () => {
+    const target = childrenList.find(c => c.id === selectedChildId) || childrenList[0];
+    if (target) {
+      processScanSuccess(target);
+    }
+  };
+
+  return (
+    <div className="w-full h-full py-6 px-5 flex flex-col justify-between items-center text-center relative overflow-hidden select-none bg-[#FAFCF7]">
+      {/* 1. 상단 헤더 & 안내 메시지 */}
+      <div className="header-group w-full max-w-[340px] flex flex-col items-center z-10 gap-1 my-auto">
+        <div className="badge mb-1 bg-[#EBF5E6] text-[#386627] text-xs px-3 py-1 rounded-full border border-[#A8D08D] font-bold">
+          🔍 QR 스캔
+        </div>
+        <h1 id="app-title-screen2" className="app-title text-xl font-bold text-[#2D4A22] mb-1">
+          📷 QR 코드를 대어주세요
+        </h1>
+      </div>
+
+      {/* 2. QR 스캔 뷰파인더 영역 */}
+      <div
+        onClick={handleSimulatedScan}
+        className="scanner-box w-full max-w-[320px] h-[180px] border-4 border-dashed border-[#388E3C] rounded-[24px] bg-[#E8F5E9] my-auto flex flex-col justify-center items-center overflow-hidden shadow-xl z-10 shrink-0 cursor-pointer active:scale-98 transition-transform relative"
+      >
+        {useRealCamera ? (
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full flex flex-col items-center justify-center bg-[#E8F5E9] p-4 relative">
+            <div className="p-2 bg-white rounded-2xl border-2 border-dashed border-[#388E3C] mb-1 shadow-xs">
+              <QrCode className="w-10 h-10 text-[#388E3C]" />
+            </div>
+            <span className="text-sm font-extrabold text-[#1B5E20]">📱 [QR 스캔 테스트하기]</span>
+            <span className="text-xs text-slate-500 mt-0.5">터치하여 스캔 인식</span>
+          </div>
+        )}
+
+        {/* 스캔 성공 오버레이 */}
+        {scannedResult && (
+          <div className="absolute inset-0 bg-[#388E3C]/95 text-white flex flex-col items-center justify-center p-3 z-30 animate-fadeIn">
+            <CheckCircle className="w-12 h-12 text-white mb-2 animate-bounce" />
+            <span className="text-base font-black">QR 인증 완료!</span>
+            <span className="text-xs font-bold text-emerald-100 mt-1">{scannedResult}</span>
+            <span className="text-xs text-amber-200 mt-2 font-bold animate-pulse">🔊 환영 음성 재생 중...</span>
+          </div>
+        )}
+
+        {/* 스캔 레이저 애니메이션 라인 */}
+        {!scannedResult && (
+          <motion.div
+            className="absolute left-0 right-0 h-1 bg-[#388E3C] shadow-[0_0_8px_#388E3C]"
+            animate={{ top: ['10%', '90%', '10%'] }}
+            transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
+          />
+        )}
+
+        {/* 뷰파인더 모서리 가이드 */}
+        <div className="absolute top-2 left-2 w-5 h-5 border-t-4 border-l-4 border-[#388E3C] rounded-tl-md" />
+        <div className="absolute top-2 right-2 w-5 h-5 border-t-4 border-r-4 border-[#388E3C] rounded-tr-md" />
+        <div className="absolute bottom-2 left-2 w-5 h-5 border-b-4 border-l-4 border-[#388E3C] rounded-bl-md" />
+        <div className="absolute bottom-2 right-2 w-5 h-5 border-b-4 border-r-4 border-[#388E3C] rounded-br-md" />
+
+        {/* 카메라 전환 버튼 */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            sounds.playClick();
+            setUseRealCamera(!useRealCamera);
+          }}
+          className="absolute bottom-2 right-2 bg-white/90 hover:bg-white text-[#1B5E20] px-2 py-1 rounded-lg text-[11px] font-bold shadow border border-[#A8D08D] flex items-center gap-1 z-20 cursor-pointer active:scale-95 transition-transform"
+          title="카메라 모드 전환"
+        >
+          <span>📷 {useRealCamera ? '가상 스캔' : '카메라 연결'}</span>
+        </button>
+      </div>
+
+      {/* Camera error notification if any */}
+      {cameraError && (
+        <div className="w-full max-w-[340px] bg-amber-50 text-amber-800 text-xs p-2 rounded-xl border border-amber-300 my-1 flex items-center justify-center gap-1 z-10">
+          <AlertCircle className="w-3.5 h-3.5 shrink-0 text-amber-600" />
+          <span>{cameraError}</span>
+        </div>
+      )}
+
+      {/* 3. 시뮬레이션 원아 선택 드롭다운 & 버튼 */}
+      <div className="w-full max-w-[340px] z-10 my-auto flex flex-col gap-2">
+        <div className="text-left">
+          <label className="block text-xs font-bold text-slate-600 mb-1">시뮬레이션 선택:</label>
+          <select
+            value={selectedChildId}
+            onChange={(e) => setSelectedChildId(e.target.value)}
+            className="child-sim-select w-full h-[40px] min-h-[40px] px-[12px] text-[1rem] font-black border-[3px] border-[#A8D08D] rounded-[14px] bg-white text-[#1B3B1A] outline-none cursor-pointer flex items-center justify-center"
+          >
+            {childrenList.map((child) => (
+              <option key={child.id} value={child.id}>
+                [{child.id}] {child.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <button
+          id="btn-scan-complete-screen2"
+          onClick={handleSimulatedScan}
+          className="mission-action-btn w-full h-[70px] bg-gradient-to-br from-[#4CAF50] to-[#2E7D32] text-white border-[4px] border-[#A8D08D] rounded-[20px] text-[1.2rem] font-black shadow-[0_5px_0_#1B5E20,0_8px_14px_rgba(0,0,0,0.15)] active:translate-y-[3px] active:shadow-[0_2px_0_#1B5E20,0_4px_6px_rgba(0,0,0,0.15)] flex items-center justify-center gap-2 cursor-pointer transition-all select-none mt-1"
+        >
+          <span>QR 스캔 인증하기</span>
+        </button>
+      </div>
+    </div>
+  );
+};
